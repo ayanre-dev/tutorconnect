@@ -8,7 +8,6 @@ import connectDB from "./db.js";
 import userRoutes from "./routes/userRoutes.js";
 import classRoutes from "./routes/classRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
-import paymentRoutes from "./routes/paymentRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -16,19 +15,22 @@ connectDB();
 const app = express();
 app.use(express.json());
 
+// CORS configuration
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:5173",
   methods: ["GET","POST","PUT","DELETE","OPTIONS"],
   credentials: true
 }));
 
+// Routes
 app.use("/api/users", userRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/sessions", sessionRoutes);
-app.use("/api/payments", paymentRoutes);
 
+// Health check
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
+// Socket.io / WebRTC Server
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -43,11 +45,6 @@ io.on("connection", (socket) => {
   socket.on("join-room", (room) => {
     socket.join(room);
     socket.to(room).emit("user-joined", { socketId: socket.id });
-  });
-
-  socket.on("leave-room", (room) => {
-    socket.leave(room);
-    socket.to(room).emit("user-left", { socketId: socket.id });
   });
 
   socket.on("webrtc-offer", ({ room, offer, to }) => {
@@ -74,12 +71,8 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("chat-message", ({ room, message, user }) => {
-    socket.to(room).emit("chat-message", { message, user, from: socket.id, time: new Date() });
-  });
-
   socket.on("disconnect", () => {
-    console.log("Socket disconnected:", socket.id);
+    // handle disconnect
   });
 });
 
