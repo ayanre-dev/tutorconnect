@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Test Client</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .videos {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .video-wrapper {
+            position: relative;
+        }
+        video {
+            width: 320px;
+            height: 240px;
+            background: #000;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        .label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        #status {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+        }
+    </style>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center;">WebRTC Test Client</h1>
+        
+        <div class="controls">
+            <input type="text" id="roomId" placeholder="Enter Room ID" value="test-room">
+            <button id="joinBtn" onclick="joinRoom()">Join Room</button>
+        </div>
+
+        <div class="videos">
+            <div class="video-wrapper">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="label">Local Video</div>
+            </div>
+            <div class="video-wrapper">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <div class="label">Remote Video</div>
+            </div>
+        </div>
+
+        <div id="status">Ready to join...</div>
+    </div>
+
+    <script>
+        const socket = io("http://localhost:5000"); // Adjust if backend port differs
+        let localStream;
+        let peerConnection;
+        let currentRoom;
+
+        const config = {
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" }
+            ]
+        };
+
+        const localVideo = document.getElementById("localVideo");
+        const remoteVideo = document.getElementById("remoteVideo");
+        const statusDiv = document.getElementById("status");
+        const joinBtn = document.getElementById("joinBtn");
+        const roomIdInput = document.getElementById("roomId");
+
+        // 1. Get Local Media
+        async function getMedia() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = stream;
+                localStream = stream;
+                return true;
+            } catch (err) {
+                console.error("Error accessing media:", err);
+                statusDiv.textContent = "Error: Could not access camera/microphone";
+                return false;
+            }
+        }
+
+        // 2. Join Room
+        async function joinRoom() {
+            const room = roomIdInput.value;
+            if (!room) return alert("Please enter a room ID");
+            
+            joinBtn.disabled = true;
+            statusDiv.textContent = "Accessing media...";
+
+            if (await getMedia()) {
+                currentRoom = room;
+                socket.emit("join-room", room);
+                statusDiv.textContent = `Joined room: ${room}. Waiting for peer...`;
+            } else {
+                joinBtn.disabled = false;
+            }
+        }
+
+        // 3. Socket Event Listeners
+
+        // When another user joins, we start the call (create offer)
+        socket.on("user-joined", async ({ socketId }) => {
+            console.log("User joined:", socketId);
+            statusDiv.textContent = "Peer joined. Starting connection...";
+            createPeerConnection(socketId); // Pass socketId to direct the offer if needed, or just rely on room broadcast
+            
+            // Create Offer
+            try {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                socket.emit("webrtc-offer", { room: currentRoom, offer });
+                statusDiv.textContent = "Sent offer...";
+            } catch (err) {
+                console.error("Error creating offer:", err);
+            }
+        });
+
+        socket.on("webrtc-offer", async ({ from, offer }) => {
+            console.log("Received offer from:", from);
+            statusDiv.textContent = "Received offer. Sending answer...";
+            
+            if (!peerConnection) createPeerConnection(from);
+
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                socket.emit("webrtc-answer", { room: currentRoom, answer });
+            } catch (err) {
+                console.error("Error handling offer:", err);
+            }
+        });
+
+        socket.on("webrtc-answer", async ({ from, answer }) => {
+            console.log("Received answer from:", from);
+            statusDiv.textContent = "Connection established!";
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+            } catch (err) {
+                console.error("Error handling answer:", err);
+            }
+        });
+
+        socket.on("webrtc-candidate", async ({ from, candidate }) => {
+            console.log("Received candidate from:", from);
+            try {
+                if (peerConnection) {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                }
+            } catch (err) {
+                console.error("Error adding candidate:", err);
+            }
+        });
+
+        // 4. PeerConnection Helper
+        function createPeerConnection(targetSocketId) {
+            peerConnection = new RTCPeerConnection(config);
+
+            // Add local tracks
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            // Handle ICE candidates
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit("webrtc-candidate", { room: currentRoom, candidate: event.candidate });
+                }
+            };
+
+            // Handle remote stream
+            peerConnection.ontrack = (event) => {
+                console.log("Received remote track");
+                remoteVideo.srcObject = event.streams[0];
+            };
+        }
+    </script>
+</body>
+</html>
