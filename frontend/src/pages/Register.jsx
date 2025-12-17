@@ -1,11 +1,19 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 import { BACKEND_URL } from "../config";
+import { useNavigate } from "react-router-dom";
 
 export default function Register(){
-  const [form, setForm] = useState({ name:"", email:"", password:"", role:"student" });
-  const [err, setErr] = useState("");
+  const [name,setName] = useState("");
+  const [email,setEmail] = useState("");
+  const [password,setPassword] = useState("");
+  const [role,setRole] = useState("student");
+  const [err,setErr] = useState("");
   const [passwordStrength, setPasswordStrength] = useState(0);
+  
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 

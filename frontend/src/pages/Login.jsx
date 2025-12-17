@@ -1,21 +1,23 @@
 import React, { useState } from "react";
 import axios from "axios";
-
+import { useAuth } from "../context/AuthContext";
 import { BACKEND_URL } from "../config";
+import { useNavigate } from "react-router-dom";
 
 export default function Login(){
   const [email,setEmail] = useState("");
   const [password,setPassword] = useState("");
   const [err,setErr] = useState("");
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   async function submit(e){
     e.preventDefault();
     setErr("");
     try{
       const { data } = await axios.post(`${BACKEND_URL}/api/users/login`, { email, password });
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      window.location = "/dashboard";
+      login(data.user, data.token); // Use context action
+      navigate("/dashboard");
     }catch(err){
       setErr(err.response?.data?.message || err.message);
     }
