@@ -4,62 +4,94 @@ import { request } from "../api";
 import { useNavigate } from "react-router-dom";
 
 const StudentDashboard = () => {
-  const [sessions, setSessions] = useState([]);
+  const [enrolledClasses, setEnrolledClasses] = useState([]);
+  const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) fetchSessions();
+    if (user) fetchEnrolledClasses();
   }, []);
 
-  const fetchSessions = async () => {
+  const fetchEnrolledClasses = async () => {
     try {
-      const data = await request(`/sessions/${user._id}`);
-      setSessions(data);
+      setLoading(true);
+      const data = await request("/classes/enrolled");
+      setEnrolledClasses(data);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching enrolled classes:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const joinSession = (sessionId) => {
-    navigate(`/room/${sessionId}`);
+  const joinClass = (classId) => {
+    // Navigate to video room for this class
+    navigate(`/room/${classId}`);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   return (
     <div className="page">
-      <h2>Student Dashboard</h2>
+      <h2>My Enrolled Classes</h2>
       
-      <div className="section">
-        <h3>Upcoming Sessions</h3>
-        {sessions.length === 0 ? <p>No sessions scheduled.</p> : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Class</th>
-                <th>Tutor</th>
-                <th>Time</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sessions.map((s) => (
-                <tr key={s._id}>
-                  <td>{s.classId?.title}</td>
-                  <td>{s.tutorId?.name}</td>
-                  <td>{new Date(s.startTime).toLocaleString()}</td>
-                  <td>
-                    <button onClick={() => joinSession(s._id)} className="btn btn-green">
-                      Join Class
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-      
-      {/* You can add a separate API call to list just Enrolled Classes here if desired */}
+      {loading ? (
+        <p>Loading your classes...</p>
+      ) : enrolledClasses.length === 0 ? (
+        <div style={{textAlign: 'center', padding: '3rem'}}>
+          <p style={{color: 'var(--text-muted)', marginBottom: '1rem'}}>
+            You haven't enrolled in any classes yet.
+          </p>
+          <button 
+            onClick={() => navigate('/marketplace')} 
+            className="btn btn-primary"
+          >
+            Browse Marketplace
+          </button>
+        </div>
+      ) : (
+        <div className="class-grid">
+          {enrolledClasses.map((classItem) => (
+            <div key={classItem._id} className="class-card">
+              <h3 style={{marginBottom: '1rem', color: 'var(--primary)'}}>{classItem.title}</h3>
+              
+              <div style={{marginBottom: '1rem'}}>
+                <p style={{marginBottom: '0.5rem'}}>
+                  <strong>Teacher:</strong> {classItem.tutorId?.name || 'N/A'}
+                </p>
+                <p style={{marginBottom: '0.5rem'}}>
+                  <strong>Subject:</strong> {classItem.subject}
+                </p>
+                <p style={{marginBottom: '0.5rem'}}>
+                  <strong>Duration:</strong> {classItem.duration || 60} minutes
+                </p>
+                <p style={{marginBottom: '0.5rem'}}>
+                  <strong>Created:</strong> {formatDate(classItem.createdAt)}
+                </p>
+                {classItem.description && (
+                  <p style={{marginTop: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem'}}>
+                    {classItem.description}
+                  </p>
+                )}
+              </div>
+
+              <button 
+                onClick={() => joinClass(classItem._id)} 
+                className="btn btn-primary btn-block"
+              >
+                Join Class
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

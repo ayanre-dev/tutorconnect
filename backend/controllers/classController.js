@@ -61,3 +61,19 @@ export const enrollInClass = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const getEnrolledClasses = async (req, res) => {
+  try {
+    const studentId = req.user._id;
+    
+    // Find all classes where the student is enrolled
+    const classes = await Class.find({ students: studentId })
+      .populate("tutorId", "name email")
+      .sort({ createdAt: -1 });
+    
+    res.json(classes);
+  } catch (err) {
+    console.error("Get enrolled classes error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
