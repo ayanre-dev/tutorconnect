@@ -32,32 +32,20 @@ const VideoRoom = () => {
         });
         setSocket(s);
 
-        const init = async () => {
-            let stream = null;
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localStreamRef.current = stream;
-                if (localVideo.current) {
-                    localVideo.current.srcObject = stream;
-                }
-                console.log("🎥 Local stream acquired");
-            } catch (err) {
-                console.error("❌ getUserMedia error:", err);
-                // Continue without stream? Or show error?
-            }
+        s.on("connect", () => {
+            console.log("🔌 Socket connected! ID:", s.id);
+        });
 
-            console.log("🚀 Joining room:", roomId);
+        const startConnection = (stream) => {
             s.emit("join-room", roomId);
 
             s.on("all-users", (users) => {
                 console.log("👥 [STATE] all-users received:", users);
                 const newPeers = [];
                 users.forEach(userID => {
-                    if (stream) {
-                        const peer = createPeer(userID, s.id, stream, s);
-                        peersRef.current.push({ peerID: userID, peer });
-                        newPeers.push({ peerID: userID, peer });
-                    }
+                    const peer = createPeer(userID, s.id, stream, s);
+                    peersRef.current.push({ peerID: userID, peer });
+                    newPeers.push({ peerID: userID, peer });
                 });
                 setPeers(newPeers);
             });
@@ -76,7 +64,7 @@ const VideoRoom = () => {
             });
 
             s.on("webrtc-answer", (payload) => {
-                console.log("📩 Received webrtc-answer from:", payload.from);
+                console.log("📩 [SIGNAL] webrtc-answer from:", payload.from);
                 const item = peersRef.current.find(p => p.peerID === payload.from);
                 if (item) {
                     item.peer.signal(payload.answer);
@@ -84,15 +72,13 @@ const VideoRoom = () => {
             });
 
             s.on("user-joined", (payload) => {
-                console.log("👤 User joined room:", payload.socketId);
+                console.log("👤 [EVENT] User joined room:", payload.socketId);
             });
 
             s.on("user-disconnected", (id) => {
-                console.log("👋 User disconnected:", id);
+                console.log("👋 [EVENT] User disconnected:", id);
                 const peerObj = peersRef.current.find(p => p.peerID === id);
-                if (peerObj) {
-                    peerObj.peer.destroy();
-                }
+                if (peerObj) peerObj.peer.destroy();
                 const peers = peersRef.current.filter(p => p.peerID !== id);
                 peersRef.current = peers;
                 setPeers(peers);
@@ -100,15 +86,29 @@ const VideoRoom = () => {
             });
         };
 
+        const init = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                console.log("🎥 Media stream acquired");
+                localStreamRef.current = stream;
+                if (localVideo.current) localVideo.current.srcObject = stream;
+                startConnection(stream);
+            } catch (err) {
+                console.error("❌ Media error:", err);
+                // Try starting without media? 
+                startConnection(null);
+            }
+        };
+
         if (roomId) init();
 
         return () => {
+            console.log("🧹 Cleaning up VideoRoom");
             s.disconnect();
             if (localStreamRef.current) {
                 localStreamRef.current.getTracks().forEach(track => track.stop());
             }
         };
-
     }, [roomId]);
 
     function createPeer(userToSignal, callerID, stream, s) {
