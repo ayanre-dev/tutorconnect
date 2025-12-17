@@ -2,15 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { io } from "socket.io-client";
 import Peer from "simple-peer";
-import { Buffer } from "buffer";
-import process from "process";
 import Chat from "../components/Chat";
 import { BACKEND_URL } from "../config";
-
-// (no polyfills)
-window.global = window;
-window.Buffer = Buffer;
-window.process = process;
 
 const VideoRoom = () => {
     const { roomId } = useParams();
