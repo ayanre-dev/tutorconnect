@@ -1,4 +1,219 @@
-body { font-family: Arial, sans-serif; margin: 12px; }
-input, button, select { padding:8px; margin:6px 0; display:block; }
-.video-row { display:flex; gap:12px; margin-top:12px; }
-video { width:320px; height:240px; background:#000; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+:root {
+  /* Monokai Palette */
+  --bg-dark: #272822; /* Main Background */
+  --bg-card: #3e3d32; /* Card Background */
+  --text-main: #f8f8f2;
+  --text-muted: #cfcfc2;
+  --primary: #a6e22e; /* Green */
+  --secondary: #66d9ef; /* Blue */
+  --danger: #f92672; /* Pink/Red */
+  --warning: #fd971f; /* Orange */
+  --purple: #ae81ff;
+
+  --glass-bg: rgba(62, 61, 50, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  min-height: 100vh;
+}
+
+a {
+  color: var(--secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+h1, h2, h3, h4 {
+  margin-top: 0;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Layout Utilities */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.center-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Glass Card */
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 2.5rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 420px;
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: 1.2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+input, select {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background-color: #1e1f1c;
+  color: var(--text-main);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 2px rgba(102, 217, 239, 0.2);
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: #272822;
+}
+
+.btn-primary:hover {
+  background-color: #b7eb46;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: #272822;
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  color: white;
+}
+
+.btn-block {
+  display: block;
+  width: 100%;
+}
+
+/* Strength Meter */
+.strength-bar-container {
+  height: 6px;
+  background-color: #555;
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.strength-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* Dashboard Grid */
+.class-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.class-card {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 1.5rem;
+  border-left: 4px solid var(--secondary);
+  transition: transform 0.2s;
+}
+
+.class-card:hover {
+  transform: translateY(-4px);
+  background: #464438;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-right: 8px;
+}
+.badge-student { background: var(--secondary); color: #272822; }
+.badge-tutor { background: var(--purple); color: white; }
+
+/* Video Room Specifics */
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  flex: 1;
+}
+
+.video-wrapper {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background:black;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  aspect-ratio: 16/9;
+}
+
+.video-wrapper video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-controls {
+  padding: 1rem 2rem;
+  background: #1e1f1c;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #333;
+}

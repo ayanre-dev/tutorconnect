@@ -41,3 +41,28 @@ export const getSessionsForUser = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const endSession = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const session = await Session.findById(sessionId);
+        
+        if (!session) {
+            return res.status(404).json({ message: "Session not found" });
+        }
+
+        // Optional: specific authorization check (e.g. only tutor or student of this session can end it)
+        if (session.tutorId.toString() !== req.user._id.toString() && session.studentId.toString() !== req.user._id.toString()) {
+             return res.status(403).json({ message: "Not authorized to end this session" });
+        }
+
+        session.status = "completed";
+        session.endTime = Date.now();
+        await session.save();
+
+        res.json({ message: "Session ended", session });
+    } catch (err) {
+        console.error("End session error:", err);
+        res.status(500).json({ message: err.message });
+    }
+};

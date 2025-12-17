@@ -1,8 +1,10 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { io } from "socket.io-client";
 import Peer from "simple-peer";
 import Chat from "../components/Chat";
+import { BACKEND_URL } from "../config";
 
 // Polyfill for simple-peer in Vite environment if needed
 if (typeof global === "undefined") {
@@ -23,7 +25,7 @@ const VideoRoom = () => {
     const peersRef = useRef([]); // Refs are mutable, good for callbacks. content: { peerID, peer }
 
     useEffect(() => {
-        const s = io("http://localhost:5000");
+        const s = io(BACKEND_URL);
         setSocket(s);
 
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
@@ -198,37 +200,62 @@ const VideoRoom = () => {
         }
     }
 
+    const endMeeting = async () => {
+        try {
+            // Using roomId as sessionId for now (assuming users join with session ID)
+            const token = localStorage.getItem("token");
+            if(token) {
+                await fetch(`${BACKEND_URL}/api/sessions/${roomId}/end`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+            }
+        } catch (err) {
+            console.error("Failed to end meeting API call", err);
+        } finally {
+            if (socket) socket.disconnect();
+            window.location.href = "/dashboard";
+        }
+    };
+
     return (
-        <div style={{ display: 'flex', height: '100vh' }}>
-            {/* Video Area */}
-            <div style={{ flex: 3, padding: '20px', background: '#202124', display: 'flex', flexDirection: 'column' }}>
-                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'white', marginBottom: '20px' }}>
-                    <h2>Room: {roomId}</h2>
-                    <button onClick={toggleScreenShare} style={{ padding: '8px 16px', borderRadius: '4px', background: '#ea4335', color: 'white', border: 'none', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', background: '#1e1f1c', borderBottom:'1px solid #333' }}>
+                <h2>Room: {roomId}</h2>
+                <div>
+                    <button onClick={toggleScreenShare} className="btn btn-secondary" style={{marginRight: '1rem'}}>
                         Share Screen
                     </button>
-                 </div>
-                 
-                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                    <button onClick={endMeeting} className="btn btn-danger">
+                        End Meeting
+                    </button>
+                </div>
+            </div>
+
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+                {/* Video Grid Area */}
+                <div className="video-grid" style={{background: 'var(--bg-dark)', overflowY:'auto'}}>
                      {/* Local Video */}
-                     <div style={{ position: 'relative' }}>
-                         <video ref={localVideo} autoPlay muted playsInline style={{ width: '100%', borderRadius: '8px', transform: 'scaleX(-1)' }} />
-                         <span style={{ position: 'absolute', bottom: '10px', left: '10px', color: 'white', background: 'rgba(0,0,0,0.5)', padding: '2px 8px', borderRadius: '4px' }}>You</span>
+                     <div className="video-wrapper">
+                         <video ref={localVideo} autoPlay muted playsInline style={{transform: 'scaleX(-1)'}} />
+                         <span style={{ position: 'absolute', bottom: '10px', left: '10px', color: 'white', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize:'0.8rem' }}>You</span>
                      </div>
                      
                      {/* Remote Videos */}
                      {streams.map((item) => (
-                         <div key={item.peerID} style={{ position: 'relative' }}>
+                         <div key={item.peerID} className="video-wrapper">
                              <VideoPlayer stream={item.stream} />
-                             <span style={{ position: 'absolute', bottom: '10px', left: '10px', color: 'white', background: 'rgba(0,0,0,0.5)', padding: '2px 8px', borderRadius: '4px' }}>Peer {item.peerID.substr(0, 5)}</span>
+                             <span style={{ position: 'absolute', bottom: '10px', left: '10px', color: 'white', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize:'0.8rem' }}>User {item.peerID.substr(0, 5)}</span>
                          </div>
                      ))}
-                 </div>
-            </div>
+                </div>
 
-            {/* Chat Area */}
-            <div style={{ flex: 1, background: 'white' }}>
-                 <Chat socket={socket} roomId={roomId} username={`User-${socket?.id?.substr(0,5)}`} />
+                {/* Chat Area */}
+                <div style={{ width: '350px', background: 'var(--bg-card)', borderLeft: '1px solid #444', display:'flex', flexDirection:'column' }}>
+                     <Chat socket={socket} roomId={roomId} username={`User-${socket?.id?.substr(0,5)}`} />
+                </div>
             </div>
         </div>
     );

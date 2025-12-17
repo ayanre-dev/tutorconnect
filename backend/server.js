@@ -17,9 +17,8 @@ app.use(express.json());
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
-  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
-  credentials: true
+  origin: "*", // Allow all origins (host IP, localhost, etc.)
+  methods: ["GET","POST","PUT","DELETE","OPTIONS"]
 }));
 
 // Routes

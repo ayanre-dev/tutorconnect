@@ -1,6 +1,7 @@
 {
   "name": "tutorconnect-frontend",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -16,6 +17,7 @@
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.2",
     "vite": "^5.1.0"
   }
 }
