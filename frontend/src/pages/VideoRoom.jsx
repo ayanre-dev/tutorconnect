@@ -256,13 +256,46 @@ const VideoRoom = () => {
                          <span style={{ position: 'absolute', bottom: '10px', left: '10px', color: 'white', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize:'0.8rem' }}>You</span>
                      </div>
                      
-                     {/* Remote Videos */}
-                     {streams.map((item) => (
-                         <div key={item.peerID} className="video-wrapper">
-                             <VideoPlayer stream={item.stream} />
-                             <span style={{ position: 'absolute', bottom: '10px', left: '10px', color: 'white', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize:'0.8rem' }}>User {item.peerID.substr(0, 5)}</span>
-                         </div>
-                     ))}
+                     {/* Remote Videos or Placeholders */}
+                     {peers.map((peer) => {
+                         const streamItem = streams.find(s => s.peerID === peer.peerID);
+                         return (
+                             <div key={peer.peerID} className="video-wrapper">
+                                 {streamItem ? (
+                                     <VideoPlayer stream={streamItem.stream} />
+                                 ) : (
+                                     <div style={{
+                                         width: '100%',
+                                         height: '100%',
+                                         display: 'flex',
+                                         flexDirection: 'column',
+                                         justifyContent: 'center',
+                                         alignItems: 'center',
+                                         background: '#1a1a1a',
+                                         color: 'var(--text-muted)'
+                                     }}>
+                                         <div className="placeholder-avatar" style={{
+                                             width: '80px',
+                                             height: '80px',
+                                             borderRadius: '50%',
+                                             background: '#333',
+                                             marginBottom: '1rem',
+                                             display: 'flex',
+                                             justifyContent: 'center',
+                                             alignItems: 'center',
+                                             fontSize: '2rem'
+                                         }}>
+                                             👤
+                                         </div>
+                                         <p>Connecting to {JSON.parse(localStorage.getItem("user"))?.role === "tutor" ? "Student" : "Tutor"}...</p>
+                                     </div>
+                                 )}
+                                 <span style={{ position: 'absolute', bottom: '10px', left: '10px', color: 'white', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize:'0.8rem' }}>
+                                     {streamItem ? `User ${peer.peerID.substr(0, 5)}` : "Joining..."}
+                                 </span>
+                             </div>
+                         );
+                     })}
                 </div>
 
                 {/* Chat Area */}
