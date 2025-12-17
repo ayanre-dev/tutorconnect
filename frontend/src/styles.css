@@ -217,3 +217,43 @@ input:focus, select:focus {
   align-items: center;
   border-bottom: 1px solid #333;
 }
+
+/* Landing Page */
+.landing-hero {
+  background: radial-gradient(circle at center, #3e3d32 0%, #272822 100%);
+  flex-direction: column;
+}
+
+.landing-title {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  background: -webkit-linear-gradient(45deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.landing-subtitle {
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  margin-bottom: 2.5rem;
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+.landing-buttons {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.text-center {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.btn-lg {
+  padding: 16px 32px;
+  font-size: 1.1rem;
+}

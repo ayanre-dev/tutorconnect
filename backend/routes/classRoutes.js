@@ -7,5 +7,6 @@ const router = express.Router();
 router.post("/create", protect, createClass);
 router.get("/tutor/:tutorId", protect, getClassesByTutor);
 router.get("/", getAllClasses);
+router.post("/enroll", protect, enrollInClass);
 
 export default router;
