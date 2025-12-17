@@ -25,7 +25,11 @@ const VideoRoom = () => {
     const peersRef = useRef([]); // Refs are mutable, good for callbacks. content: { peerID, peer }
 
     useEffect(() => {
-        const s = io(BACKEND_URL);
+        const s = io(BACKEND_URL, {
+            extraHeaders: {
+                "ngrok-skip-browser-warning": "true"
+            }
+        });
         setSocket(s);
 
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
@@ -52,12 +56,10 @@ const VideoRoom = () => {
                 });
 
                 s.on("user-joined", (payload) => {
-                    const peer = addPeer(payload.signal, payload.callerID, stream, s);
-                    peersRef.current.push({
-                        peerID: payload.callerID,
-                        peer
-                    });
-                    setPeers(users => [...users, { peerID: payload.callerID, peer }]);
+                    // Optional: You could log that someone joined, 
+                    // but the joiner will initiate the Peer connection (createPeer)
+                    // and we will receive an 'webrtc-offer'.
+                    console.log("User joined:", payload.socketId);
                 });
 
                 s.on("webrtc-answer", (payload) => {

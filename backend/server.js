@@ -55,8 +55,10 @@ app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow all origins for testing
-    methods: ["GET","POST"]
+    origin: "*", 
+    methods: ["GET", "POST"],
+    allowedHeaders: ["ngrok-skip-browser-warning"],
+    credentials: true
   }
 });
 
