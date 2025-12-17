@@ -2,7 +2,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { io } from "socket.io-client";
-import "../polyfills";
 import Peer from "simple-peer";
 import Chat from "../components/Chat";
 import { BACKEND_URL } from "../config";
