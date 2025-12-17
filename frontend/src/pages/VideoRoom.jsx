@@ -68,26 +68,10 @@ const VideoRoom = () => {
                 });
 
                 s.on("webrtc-offer", (payload) => {
-                    // Handled in 'user-joined' usually if initiator logic is correct, 
-                    // BUT in this mesh logic:
-                    // 'user-joined' means "Someone new joined, call them".
-                    // 'webrtc-offer' means "Someone is calling ME".
-                    // Wait, my server logic emits 'user-joined' to ALL.
-                    // Let's refine the signal handling.
-                    
-                    // Actually, standard mesh:
-                    // 1. Joiner receives 'all-users'.
-                    // 2. Joiner calls createPeer -> emits 'webrtc-offer' to Target.
-                    // 3. Target receives 'webrtc-offer' -> calls addPeer -> emits 'webrtc-answer'.
-                    
-                    // So we need to listen for 'webrtc-offer' here to answer calls from Joiners.
+                    // Receiving an offer from another peer
                     const item = peersRef.current.find(p => p.peerID === payload.from);
-                    if (item) {
-                        // We already have a peer for this user? Maybe re-negotiating?
-                        // Or race condition.
-                        item.peer.signal(payload.offer);
-                    } else {
-                        // Incoming call from a new joiner
+                    if (!item) {
+                        // New peer calling us - create answer peer
                         const peer = addPeer(payload.offer, payload.from, stream, s);
                         peersRef.current.push({ peerID: payload.from, peer });
                         setPeers(users => [...users, { peerID: payload.from, peer }]);
@@ -200,24 +184,37 @@ const VideoRoom = () => {
         }
     }
 
-    const endMeeting = async () => {
-        try {
-            // Using roomId as sessionId for now (assuming users join with session ID)
-            const token = localStorage.getItem("token");
-            if(token) {
-                await fetch(`${BACKEND_URL}/api/sessions/${roomId}/end`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-            }
-        } catch (err) {
-            console.error("Failed to end meeting API call", err);
-        } finally {
-            if (socket) socket.disconnect();
-            window.location.href = "/dashboard";
+    const leaveMeeting = () => {
+        // Students just leave without ending the session
+        if (socket) socket.disconnect();
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(track => track.stop());
         }
+        window.location.href = "/dashboard";
+    };
+
+    const endMeeting = async () => {
+        // Only tutors can end the session for everyone
+        const user = JSON.parse(localStorage.getItem("user"));
+        
+        if (user?.role === "tutor") {
+            try {
+                const token = localStorage.getItem("token");
+                if(token) {
+                    await fetch(`${BACKEND_URL}/api/sessions/${roomId}/end`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to end meeting API call", err);
+            }
+        }
+        
+        // Both students and tutors disconnect and leave
+        leaveMeeting();
     };
 
     return (
@@ -229,7 +226,7 @@ const VideoRoom = () => {
                         Share Screen
                     </button>
                     <button onClick={endMeeting} className="btn btn-danger">
-                        End Meeting
+                        {JSON.parse(localStorage.getItem("user"))?.role === "tutor" ? "End Meeting" : "Leave Meeting"}
                     </button>
                 </div>
             </div>
