@@ -32,7 +32,7 @@ const TutorDashboard = () => {
   const createClass = async (e) => {
     e.preventDefault();
     try {
-      await request("/classes", "POST", newClass);
+      await request("/classes/create", "POST", newClass);
       fetchData(); // Refresh
       alert("Class created!");
     } catch (err) {
