@@ -43,7 +43,7 @@ const TutorDashboard = () => {
   const createSession = async (e) => {
     e.preventDefault();
     try {
-      await request("/sessions", "POST", sessionForm);
+      await request("/sessions/create", "POST", sessionForm);
       fetchData(); // Refresh
       alert("Session scheduled!");
     } catch (err) {
