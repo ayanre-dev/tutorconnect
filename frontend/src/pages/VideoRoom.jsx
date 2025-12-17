@@ -50,7 +50,7 @@ const VideoRoom = () => {
             s.emit("join-room", roomId);
 
             s.on("all-users", (users) => {
-                console.log("👥 Existing users in room:", users);
+                console.log("👥 [STATE] all-users received:", users);
                 const newPeers = [];
                 users.forEach(userID => {
                     if (stream) {
@@ -63,12 +63,15 @@ const VideoRoom = () => {
             });
 
             s.on("webrtc-offer", (payload) => {
-                console.log("📩 Received webrtc-offer from:", payload.from);
+                console.log("📩 [SIGNAL] webrtc-offer from:", payload.from);
                 const item = peersRef.current.find(p => p.peerID === payload.from);
                 if (!item) {
                     const peer = addPeer(payload.offer, payload.from, stream, s);
                     peersRef.current.push({ peerID: payload.from, peer });
-                    setPeers(users => [...users, { peerID: payload.from, peer }]);
+                    setPeers(users => {
+                        console.log("👥 [STATE] adding peer from offer:", payload.from);
+                        return [...users, { peerID: payload.from, peer }];
+                    });
                 }
             });
 
@@ -231,7 +234,8 @@ const VideoRoom = () => {
                     await fetch(`${BACKEND_URL}/api/sessions/${roomId}/end`, {
                         method: 'PUT',
                         headers: {
-                            'Authorization': `Bearer ${token}`
+                            'Authorization': `Bearer ${token}`,
+                            'ngrok-skip-browser-warning': 'true'
                         }
                     });
                 }

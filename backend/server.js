@@ -63,43 +63,47 @@ const io = new Server(server, {
 });
 
 
-const users = {}; // Room ID -> Array of Socket IDs
-
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
   socket.on("join-room", (room) => {
+    console.log(`👤 User ${socket.id} joining room: ${room}`);
     socket.join(room);
     
-    // Initialize room if not exists
-    if (!users[room]) {
-        users[room] = [];
+    // Get all users currently in the room using Socket.io adapter
+    const roomSet = io.sockets.adapter.rooms.get(room);
+    const usersInRoom = [];
+    if (roomSet) {
+      for (const id of roomSet) {
+        if (id !== socket.id) {
+          usersInRoom.push(id);
+        }
+      }
     }
 
-    // Send existing users to the new joiner ONLY
-    const usersInRoom = users[room].filter(id => id !== socket.id);
+    console.log(`👥 Other users in room ${room}:`, usersInRoom);
     socket.emit("all-users", usersInRoom);
 
-    // Add new user to room list
-    users[room].push(socket.id);
-
-    // Notify others that a user joined (for their UI updates, or late connections if needed)
+    // Notify others that a user joined
     socket.to(room).emit("user-joined", { socketId: socket.id });
   });
 
   socket.on("webrtc-offer", ({ room, offer, to }) => {
+    console.log(`📡 [OFFER] from ${socket.id} to ${to} in room ${room}`);
     if (to) {
       io.to(to).emit("webrtc-offer", { from: socket.id, offer });
     }
   });
 
   socket.on("webrtc-answer", ({ room, answer, to }) => {
+    console.log(`📡 [ANSWER] from ${socket.id} to ${to} in room ${room}`);
     if (to) {
       io.to(to).emit("webrtc-answer", { from: socket.id, answer });
     }
   });
 
   socket.on("webrtc-candidate", ({ room, candidate, to }) => {
+    console.log(`📡 [CANDIDATE] from ${socket.id} to ${to} in room ${room}`);
     if (to) {
       io.to(to).emit("webrtc-candidate", { from: socket.id, candidate });
     }
@@ -107,22 +111,22 @@ io.on("connection", (socket) => {
 
   // Chat Event
   socket.on("chat-message", ({ room, message, username }) => {
-    // Broadcast to everyone in the room INCLUDING sender (simplifies frontend logic)
-    // or just to others if you append locally. Let's broadcast to others for now 
-    // and assume sender appends locally, OR use io.to(room) to send to all.
-    // Standard pattern: broadcast to others, sender handles own UI.
+    console.log(`💬 [CHAT] in ${room} from ${username}: ${message}`);
     socket.to(room).emit("chat-message", { from: socket.id, message, username });
   });
 
-  socket.on("disconnect", () => {
-    // Remove user from all rooms they were in
-    for (const room in users) {
-        if (users[room].includes(socket.id)) {
-            users[room] = users[room].filter(id => id !== socket.id);
-            // Notify room of disconnection
-            socket.to(room).emit("user-disconnected", socket.id);
-        }
+  socket.on("disconnecting", () => {
+    // Notify all rooms the user was in before they leave
+    for (const room of socket.rooms) {
+      if (room !== socket.id) {
+        console.log(`👋 User ${socket.id} leaving room: ${room}`);
+        socket.to(room).emit("user-disconnected", socket.id);
+      }
     }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Socket disconnected:", socket.id);
   });
 });
 
