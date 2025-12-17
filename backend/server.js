@@ -16,9 +16,25 @@ const app = express();
 app.use(express.json());
 
 // CORS configuration
+// CORS configuration
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:4173", // Vite preview
+  "https://tutorconnect-five.vercel.app", // Deployed Frontend
+  process.env.CLIENT_URL, // Env variable fallback
+  "*" // Temporary fallback
+];
+
 app.use(cors({
-  origin: "*", // Allow all origins (host IP, localhost, etc.)
-  methods: ["GET","POST","PUT","DELETE","OPTIONS"]
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    // While "*" is here, logic is simple. To restrict later, remove "*" and use:
+    // if (allowedOrigins.indexOf(origin) !== -1) { ... }
+    return callback(null, true); 
+  },
+  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
+  credentials: true // Credentials usually need specific origin, not "*"
 }));
 
 // Routes
