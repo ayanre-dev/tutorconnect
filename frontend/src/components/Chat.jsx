@@ -34,7 +34,7 @@ const Chat = ({ socket, roomId, username }) => {
         from: socket.id,
         isLocal: true // Helper to style local messages differently
       };
-      
+
       // Emit to others
       socket.emit('chat-message', msgData);
 
@@ -49,11 +49,12 @@ const Chat = ({ socket, roomId, username }) => {
       <h3>Chat</h3>
       <div className="messages" style={{ flex: 1, overflowY: 'auto', marginBottom: '10px' }}>
         {messages.map((msg, index) => (
-          <div key={index} style={{ 
-            textAlign: msg.isLocal ? 'right' : 'left', 
+          <div key={index} style={{
+            textAlign: msg.isLocal ? 'right' : 'left',
             margin: '5px 0',
-            backgroundColor: msg.isLocal ? '#e3f2fd' : '#f5f5f5',
-            padding: '5px 10px',
+            backgroundColor: msg.isLocal ? '#444' : '#333',
+            color: '#fff',
+            padding: '8px 12px',
             borderRadius: '10px'
           }}>
             <strong>{msg.username}: </strong>
@@ -72,7 +73,7 @@ const Chat = ({ socket, roomId, username }) => {
         />
         <button type="submit" style={{ marginLeft: '5px', padding: '8px 12px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Send</button>
       </form>
-    </div>
+    </div >
   );
 };
 
