@@ -6,14 +6,7 @@ import Peer from "simple-peer";
 import Chat from "../components/Chat";
 import { BACKEND_URL } from "../config";
 
-// Polyfill for simple-peer in Vite environment if needed
-if (typeof global === "undefined") {
-    window.global = window;
-}
-// process is sometimes needed by simple-peer dependencies
-if (typeof process === "undefined") {
-    window.process = { env: { DEBUG: undefined }, nextTick: (cb) => setTimeout(cb, 0) };
-}
+// (no polyfills)
 
 const VideoRoom = () => {
     const { roomId } = useParams();
@@ -25,11 +18,9 @@ const VideoRoom = () => {
     const peersRef = useRef([]); // Refs are mutable, good for callbacks. content: { peerID, peer }
 
     useEffect(() => {
-        const s = io(BACKEND_URL, {
-            extraHeaders: {
-                "ngrok-skip-browser-warning": "true"
-            }
-        });
+        // Use explicit transports so socket.io prefers websocket.
+        // Browsers ignore `extraHeaders`; use the ngrok HTTPS URL as BACKEND_URL.
+        const s = io(BACKEND_URL, { transports: ["websocket", "polling"] });
         setSocket(s);
 
         s.on("connect", () => {
@@ -51,7 +42,11 @@ const VideoRoom = () => {
             });
 
             s.on("webrtc-offer", (payload) => {
-                console.log("📩 [SIGNAL] webrtc-offer from:", payload.from);
+                console.log("📩 [SIGNAL] webrtc-offer from:", payload?.from);
+                if (!payload || !payload.offer) {
+                    console.warn('webrtc-offer missing offer payload', payload);
+                    return;
+                }
                 const item = peersRef.current.find(p => p.peerID === payload.from);
                 if (!item) {
                     const peer = addPeer(payload.offer, payload.from, stream, s);
@@ -64,10 +59,20 @@ const VideoRoom = () => {
             });
 
             s.on("webrtc-answer", (payload) => {
-                console.log("📩 [SIGNAL] webrtc-answer from:", payload.from);
+                console.log("📩 [SIGNAL] webrtc-answer from:", payload?.from);
+                if (!payload || !payload.answer) {
+                    console.warn('webrtc-answer missing answer payload', payload);
+                    return;
+                }
                 const item = peersRef.current.find(p => p.peerID === payload.from);
-                if (item) {
-                    item.peer.signal(payload.answer);
+                if (item && item.peer) {
+                    try {
+                        item.peer.signal(payload.answer);
+                    } catch (err) {
+                        console.error('Failed to signal peer with answer', err, payload);
+                    }
+                } else {
+                    console.warn('No peer object found for answer from', payload.from);
                 }
             });
 
