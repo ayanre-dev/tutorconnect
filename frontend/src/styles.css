@@ -2,14 +2,20 @@
 
 :root {
   /* Monokai Palette */
-  --bg-dark: #272822; /* Main Background */
-  --bg-card: #3e3d32; /* Card Background */
+  --bg-dark: #272822;
+  /* Main Background */
+  --bg-card: #3e3d32;
+  /* Card Background */
   --text-main: #f8f8f2;
   --text-muted: #cfcfc2;
-  --primary: #a6e22e; /* Green */
-  --secondary: #66d9ef; /* Blue */
-  --danger: #f92672; /* Pink/Red */
-  --warning: #fd971f; /* Orange */
+  --primary: #a6e22e;
+  /* Green */
+  --secondary: #66d9ef;
+  /* Blue */
+  --danger: #f92672;
+  /* Pink/Red */
+  --warning: #fd971f;
+  /* Orange */
   --purple: #ae81ff;
 
   --glass-bg: rgba(62, 61, 50, 0.7);
@@ -40,7 +46,10 @@ a:hover {
   text-decoration: underline;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   margin-top: 0;
   color: var(--primary);
   font-weight: 700;
@@ -48,13 +57,14 @@ h1, h2, h3, h4 {
 
 /* Navbar */
 .navbar {
-  background-color: #1e1f1c; /* Slightly lighter than body */
+  background-color: #1e1f1c;
+  /* Slightly lighter than body */
   border-bottom: 1px solid #333;
   padding: 1rem 0;
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .navbar-container {
@@ -88,7 +98,8 @@ h1, h2, h3, h4 {
   transition: color 0.2s;
 }
 
-.nav-link:hover, .nav-link.active {
+.nav-link:hover,
+.nav-link.active {
   color: var(--text-main);
 }
 
@@ -161,7 +172,8 @@ label {
   color: var(--text-muted);
 }
 
-input, select {
+input,
+select {
   padding: 12px 16px;
   border-radius: 8px;
   border: 1px solid #555;
@@ -172,7 +184,8 @@ input, select {
   transition: border-color 0.2s;
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
   border-color: var(--secondary);
   box-shadow: 0 0 0 2px rgba(102, 217, 239, 0.2);
 }
@@ -258,8 +271,16 @@ input:focus, select:focus {
   font-weight: bold;
   margin-right: 8px;
 }
-.badge-student { background: var(--secondary); color: #272822; }
-.badge-tutor { background: var(--purple); color: white; }
+
+.badge-student {
+  background: var(--secondary);
+  color: #272822;
+}
+
+.badge-tutor {
+  background: var(--purple);
+  color: white;
+}
 
 /* Video Room Specifics */
 .video-grid {
@@ -274,8 +295,8 @@ input:focus, select:focus {
   position: relative;
   border-radius: 12px;
   overflow: hidden;
-  background:black;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  background: black;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   aspect-ratio: 16/9;
 }
 
@@ -332,4 +353,66 @@ input:focus, select:focus {
 .btn-lg {
   padding: 16px 32px;
   font-size: 1.1rem;
+}
+
+/* Tutor Dashboard Grouping */
+.class-section {
+  background: var(--bg-card);
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.class-header {
+  font-size: 1.4rem;
+  color: var(--primary);
+  border-bottom: 1px solid #444;
+  padding-bottom: 0.8rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.session-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.session-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--secondary);
+  transform: translateY(-2px);
+}
+
+.session-card strong {
+  color: var(--text-main);
+  font-size: 1.1rem;
+}
+
+.session-detail {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.session-time {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #444;
+  font-size: 0.85rem;
 }
