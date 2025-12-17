@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { io } from "socket.io-client";
+import "../polyfills";
 import Peer from "simple-peer";
 import Chat from "../components/Chat";
 import { BACKEND_URL } from "../config";
@@ -35,6 +36,7 @@ const VideoRoom = () => {
                 const newPeers = [];
                 users.forEach(userID => {
                     const peer = createPeer(userID, s.id, stream, s);
+                    if (!peer) return;
                     peersRef.current.push({ peerID: userID, peer });
                     newPeers.push({ peerID: userID, peer });
                 });
@@ -50,6 +52,7 @@ const VideoRoom = () => {
                 const item = peersRef.current.find(p => p.peerID === payload.from);
                 if (!item) {
                     const peer = addPeer(payload.offer, payload.from, stream, s);
+                    if (!peer) return;
                     peersRef.current.push({ peerID: payload.from, peer });
                     setPeers(users => {
                         console.log("👥 [STATE] adding peer from offer:", payload.from);
@@ -118,10 +121,9 @@ const VideoRoom = () => {
 
     function createPeer(userToSignal, callerID, stream, s) {
         console.log("📞 Creating peer (initiator) for:", userToSignal);
-        const peer = new Peer({
+        const options = {
             initiator: true,
             trickle: false,
-            stream,
             config: {
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
@@ -129,7 +131,21 @@ const VideoRoom = () => {
                     { urls: 'stun:stun2.l.google.com:19302' },
                 ]
             }
-        });
+        };
+
+        if (stream && typeof stream.getTracks === 'function') {
+            options.stream = stream;
+        } else if (stream) {
+            console.warn('createPeer: provided stream does not look like a MediaStream', stream);
+        }
+
+        let peer;
+        try {
+            peer = new Peer(options);
+        } catch (err) {
+            console.error('Failed to create Peer (initiator)', err, { userToSignal, callerID, hasStream: !!stream });
+            return null;
+        }
 
         peer.on("signal", signal => {
             console.log("📤 Sending offer to:", userToSignal);
@@ -153,10 +169,9 @@ const VideoRoom = () => {
 
     function addPeer(incomingSignal, callerID, stream, s) {
         console.log("📞 Adding peer (non-initiator) for:", callerID);
-        const peer = new Peer({
+        const options = {
             initiator: false,
             trickle: false,
-            stream,
             config: {
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
@@ -164,7 +179,21 @@ const VideoRoom = () => {
                     { urls: 'stun:stun2.l.google.com:19302' },
                 ]
             }
-        });
+        };
+
+        if (stream && typeof stream.getTracks === 'function') {
+            options.stream = stream;
+        } else if (stream) {
+            console.warn('addPeer: provided stream does not look like a MediaStream', stream);
+        }
+
+        let peer;
+        try {
+            peer = new Peer(options);
+        } catch (err) {
+            console.error('Failed to create Peer (non-initiator)', err, { callerID, hasStream: !!stream });
+            return null;
+        }
 
         peer.on("signal", signal => {
             console.log("📤 Sending answer to:", callerID);
@@ -183,7 +212,11 @@ const VideoRoom = () => {
 
         peer.on("error", err => console.error("Peer error:", err));
 
-        peer.signal(incomingSignal);
+        try {
+            peer.signal(incomingSignal);
+        } catch (err) {
+            console.error('Error signaling incoming offer on non-initiator peer', err, { callerID, incomingSignal });
+        }
 
         return peer;
     }
