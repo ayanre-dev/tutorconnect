@@ -1,5 +1,7 @@
 // api.js
-const API_URL = "http://localhost:5000/api";
+import { BACKEND_URL } from "./config";
+
+const API_URL = `${BACKEND_URL}/api`;
 
 export const request = async (endpoint, method = "GET", body = null) => {
   const token = localStorage.getItem("token");
