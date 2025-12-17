@@ -9,12 +9,12 @@ export default function Dashboard(){
   useEffect(()=>{
     async function fetch(){
       try{
-        console.log("Response:", res.data);
+        const res = await axios.get(`${BACKEND_URL}/api/classes`);
         if (Array.isArray(res.data)) {
             setClasses(res.data);
         } else {
             console.error("API did not return an array!", res.data);
-            // setClasses([]); // Keep empty
+            setClasses([]);
         }
       }catch(err){
         console.error("Fetch error:", err);
@@ -26,10 +26,7 @@ export default function Dashboard(){
   return (
     <div className="container">
       <header style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'2rem'}}>
-        <div>
-            <h2>Dashboard</h2>
-            <small style={{color:'#666', fontSize:'0.7rem'}}>Connecting to: {BACKEND_URL}</small>
-        </div>
+        <h2>Dashboard</h2>
         {user && 
             <div className="badge badge-student" style={{fontSize:'1rem', padding:'8px 16px'}}>
                 {user.name} ({user.role})
