@@ -40,3 +40,24 @@ export const getAllClasses = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const enrollInClass = async (req, res) => {
+  try {
+    const { classId } = req.body;
+    const studentId = req.user._id;
+
+    const classData = await Class.findById(classId);
+    if (!classData) return res.status(404).json({ message: "Class not found" });
+
+    if (classData.students.includes(studentId)) {
+      return res.status(400).json({ message: "Already enrolled" });
+    }
+
+    classData.students.push(studentId);
+    await classData.save();
+
+    res.status(200).json({ message: "Enrolled successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
