@@ -4,8 +4,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   define: {
-    global: 'globalThis',
-    'process.env': {},
+    'global': 'window',
+    'process.env': {}
   },
   server: {
     port: 5173,

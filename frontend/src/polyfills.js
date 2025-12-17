@@ -1,16 +1,7 @@
-window.global = window;
 import { Buffer } from "buffer";
+import process from "process";
 
-if (typeof window.process === "undefined") {
-    window.process = { 
-        env: { DEBUG: undefined }, 
-        nextTick: (cb) => setTimeout(cb, 0),
-        browser: true,
-        version: '',
-        versions: {}
-    };
-}
-if (typeof window.Buffer === "undefined") {
-    window.Buffer = Buffer;
-}
+window.global = window;
+window.Buffer = Buffer;
+window.process = process;
 
