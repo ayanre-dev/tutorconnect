@@ -16,25 +16,31 @@ const app = express();
 app.use(express.json());
 
 // CORS configuration
-// CORS configuration
 const allowedOrigins = [
   "http://localhost:5173",
-  "http://localhost:4173", // Vite preview
-  "https://tutorconnect-five.vercel.app", // Deployed Frontend
-  process.env.CLIENT_URL, // Env variable fallback
-  "*" // Temporary fallback
-];
+  "http://localhost:4173",
+  "https://tutorconnect-five.vercel.app",
+  process.env.CLIENT_URL
+].filter(Boolean);
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-    // While "*" is here, logic is simple. To restrict later, remove "*" and use:
-    // if (allowedOrigins.indexOf(origin) !== -1) { ... }
-    return callback(null, true); 
+    
+    // Allow all origins for development (you can restrict this later)
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+    
+    // For now, allow all origins to debug
+    return callback(null, true);
   },
-  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
-  credentials: true // Credentials usually need specific origin, not "*"
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Routes
