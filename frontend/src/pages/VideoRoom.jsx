@@ -1,12 +1,16 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { io } from "socket.io-client";
 import Peer from "simple-peer";
+import { Buffer } from "buffer";
+import process from "process";
 import Chat from "../components/Chat";
 import { BACKEND_URL } from "../config";
 
 // (no polyfills)
+window.global = window;
+window.Buffer = Buffer;
+window.process = process;
 
 const VideoRoom = () => {
     const { roomId } = useParams();
@@ -18,9 +22,13 @@ const VideoRoom = () => {
     const peersRef = useRef([]); // Refs are mutable, good for callbacks. content: { peerID, peer }
 
     useEffect(() => {
-        // Use explicit transports so socket.io prefers websocket.
-        // Browsers ignore `extraHeaders`; use the ngrok HTTPS URL as BACKEND_URL.
-        const s = io(BACKEND_URL, { transports: ["websocket", "polling"] });
+        // Consolidating Ngrok bypass and transport settings
+        const s = io(BACKEND_URL, { 
+            transports: ["websocket", "polling"],
+            extraHeaders: {
+                "ngrok-skip-browser-warning": "true"
+            }
+        });
         setSocket(s);
 
         s.on("connect", () => {
