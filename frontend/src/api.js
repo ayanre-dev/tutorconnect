@@ -7,6 +7,7 @@ export const request = async (endpoint, method = "GET", body = null) => {
   const token = localStorage.getItem("token");
   const headers = {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true", // Skip ngrok browser warning
     ...(token && { Authorization: `Bearer ${token}` }),
   };
 
