@@ -32,82 +32,84 @@ const VideoRoom = () => {
         });
         setSocket(s);
 
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => {
+        const init = async () => {
+            let stream = null;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 localStreamRef.current = stream;
                 if (localVideo.current) {
                     localVideo.current.srcObject = stream;
                 }
+                console.log("🎥 Local stream acquired");
+            } catch (err) {
+                console.error("❌ getUserMedia error:", err);
+                // Continue without stream? Or show error?
+            }
 
-                s.emit("join-room", roomId);
+            console.log("🚀 Joining room:", roomId);
+            s.emit("join-room", roomId);
 
-                s.on("all-users", (users) => {
-                    // users is an array of socket IDs e.g. ["ID_A", "ID_B"]
-                    const newPeers = [];
-                    users.forEach(userID => {
+            s.on("all-users", (users) => {
+                console.log("👥 Existing users in room:", users);
+                const newPeers = [];
+                users.forEach(userID => {
+                    if (stream) {
                         const peer = createPeer(userID, s.id, stream, s);
-                        peersRef.current.push({
-                            peerID: userID,
-                            peer,
-                        });
+                        peersRef.current.push({ peerID: userID, peer });
                         newPeers.push({ peerID: userID, peer });
-                    });
-                    setPeers(newPeers);
-                });
-
-                s.on("user-joined", (payload) => {
-                    // Optional: You could log that someone joined, 
-                    // but the joiner will initiate the Peer connection (createPeer)
-                    // and we will receive an 'webrtc-offer'.
-                    console.log("User joined:", payload.socketId);
-                });
-
-                s.on("webrtc-answer", (payload) => {
-                    const item = peersRef.current.find(p => p.peerID === payload.from);
-                    if (item) {
-                        item.peer.signal(payload.answer);
                     }
                 });
+                setPeers(newPeers);
+            });
 
-                s.on("webrtc-offer", (payload) => {
-                    // Receiving an offer from another peer
-                    const item = peersRef.current.find(p => p.peerID === payload.from);
-                    if (!item) {
-                        // New peer calling us - create answer peer
-                        const peer = addPeer(payload.offer, payload.from, stream, s);
-                        peersRef.current.push({ peerID: payload.from, peer });
-                        setPeers(users => [...users, { peerID: payload.from, peer }]);
-                    }
-                });
+            s.on("webrtc-offer", (payload) => {
+                console.log("📩 Received webrtc-offer from:", payload.from);
+                const item = peersRef.current.find(p => p.peerID === payload.from);
+                if (!item) {
+                    const peer = addPeer(payload.offer, payload.from, stream, s);
+                    peersRef.current.push({ peerID: payload.from, peer });
+                    setPeers(users => [...users, { peerID: payload.from, peer }]);
+                }
+            });
 
-                s.on("webrtc-candidate", (payload) => {
-                     const item = peersRef.current.find(p => p.peerID === payload.from);
-                     if (item) {
-                         item.peer.signal(payload.candidate);
-                     }
-                });
+            s.on("webrtc-answer", (payload) => {
+                console.log("📩 Received webrtc-answer from:", payload.from);
+                const item = peersRef.current.find(p => p.peerID === payload.from);
+                if (item) {
+                    item.peer.signal(payload.answer);
+                }
+            });
 
-                s.on("user-disconnected", (id) => {
-                    const peerObj = peersRef.current.find(p => p.peerID === id);
-                    if (peerObj) {
-                        peerObj.peer.destroy();
-                    }
-                    const peers = peersRef.current.filter(p => p.peerID !== id);
-                    peersRef.current = peers;
-                    setPeers(peers);
-                    setStreams(prev => prev.filter(s => s.peerID !== id));
-                });
-            })
-            .catch(err => console.error("getUserMedia error:", err));
+            s.on("user-joined", (payload) => {
+                console.log("👤 User joined room:", payload.socketId);
+            });
 
-            return () => {
-                s.disconnect();
-                // cleanup
-            };
+            s.on("user-disconnected", (id) => {
+                console.log("👋 User disconnected:", id);
+                const peerObj = peersRef.current.find(p => p.peerID === id);
+                if (peerObj) {
+                    peerObj.peer.destroy();
+                }
+                const peers = peersRef.current.filter(p => p.peerID !== id);
+                peersRef.current = peers;
+                setPeers(peers);
+                setStreams(prev => prev.filter(s => s.peerID !== id));
+            });
+        };
+
+        if (roomId) init();
+
+        return () => {
+            s.disconnect();
+            if (localStreamRef.current) {
+                localStreamRef.current.getTracks().forEach(track => track.stop());
+            }
+        };
 
     }, [roomId]);
 
     function createPeer(userToSignal, callerID, stream, s) {
+        console.log("📞 Creating peer (initiator) for:", userToSignal);
         const peer = new Peer({
             initiator: true,
             trickle: false,
@@ -122,10 +124,12 @@ const VideoRoom = () => {
         });
 
         peer.on("signal", signal => {
+            console.log("📤 Sending offer to:", userToSignal);
             s.emit("webrtc-offer", { room: roomId, offer: signal, to: userToSignal });
         });
 
         peer.on("stream", stream => {
+            console.log("🎬 Received remote stream from:", userToSignal);
             setStreams(prev => {
                 if(!prev.find(x => x.peerID === userToSignal)) {
                     return [...prev, { peerID: userToSignal, stream }];
@@ -134,10 +138,13 @@ const VideoRoom = () => {
             });
         });
 
+        peer.on("error", err => console.error("Peer error:", err));
+
         return peer;
     }
 
     function addPeer(incomingSignal, callerID, stream, s) {
+        console.log("📞 Adding peer (non-initiator) for:", callerID);
         const peer = new Peer({
             initiator: false,
             trickle: false,
@@ -152,10 +159,12 @@ const VideoRoom = () => {
         });
 
         peer.on("signal", signal => {
+            console.log("📤 Sending answer to:", callerID);
             s.emit("webrtc-answer", { room: roomId, answer: signal, to: callerID });
         });
 
         peer.on("stream", stream => {
+            console.log("🎬 Received remote stream from:", callerID);
             setStreams(prev => {
                 if(!prev.find(x => x.peerID === callerID)) {
                      return [...prev, { peerID: callerID, stream }];
@@ -163,6 +172,8 @@ const VideoRoom = () => {
                 return prev;
             });
         });
+
+        peer.on("error", err => console.error("Peer error:", err));
 
         peer.signal(incomingSignal);
 
