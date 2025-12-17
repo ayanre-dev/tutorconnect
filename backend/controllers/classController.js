@@ -23,7 +23,9 @@ export const createClass = async (req, res) => {
 
 export const getClassesByTutor = async (req, res) => {
   try {
-    const classes = await Class.find({ tutorId: req.params.tutorId }).populate("tutorId", "name email");
+    const classes = await Class.find({ tutorId: req.params.tutorId })
+      .populate("tutorId", "name email")
+      .populate("students", "name email");
     res.json(classes);
   } catch (err) {
     console.error("Get classes error:", err);

@@ -3,22 +3,29 @@ import Class from "../models/Class.js";
 
 export const createSession = async (req, res) => {
   try {
-    const { classId, startTime } = req.body;
+    const { classId, startTime, studentId: bodyStudentId } = req.body;
     if (!classId || !startTime) return res.status(400).json({ message: "classId and startTime required" });
 
     const classData = await Class.findById(classId);
     if (!classData) return res.status(404).json({ message: "Class not found" });
 
+    // Logic: If Tutor, use provided studentId. If Student, use self.
+    let targetStudentId = req.user._id;
+    if (req.user.role === "tutor") {
+      if (!bodyStudentId) return res.status(400).json({ message: "Student ID required for tutor-scheduled sessions" });
+      targetStudentId = bodyStudentId;
+    }
+
     const session = await Session.create({
       classId,
       tutorId: classData.tutorId,
-      studentId: req.user._id,
+      studentId: targetStudentId,
       startTime: new Date(startTime),
       status: "scheduled"
     });
 
-    if (!classData.students.includes(req.user._id)) {
-      classData.students.push(req.user._id);
+    if (!classData.students.includes(targetStudentId)) {
+      classData.students.push(targetStudentId);
       await classData.save();
     }
 
