@@ -46,9 +46,19 @@ export const AuthProvider = ({ children }) => {
     loading
   };
 
+  if (loading) {
+    return (
+      <div className="center-screen">
+        <div style={{color: 'var(--primary)', fontSize: '1.2rem', fontWeight: 'bold'}}>
+            Loading TutorConnect...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

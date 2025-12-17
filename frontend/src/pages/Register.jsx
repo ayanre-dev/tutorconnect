@@ -5,15 +5,20 @@ import { BACKEND_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 
 export default function Register(){
-  const [name,setName] = useState("");
-  const [email,setEmail] = useState("");
-  const [password,setPassword] = useState("");
-  const [role,setRole] = useState("student");
+  const [form, setForm] = useState({ name:"", email:"", password:"", role:"student" });
   const [err,setErr] = useState("");
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -46,11 +51,15 @@ export default function Register(){
       return;
     }
 
+    setLoading(true);
     try{
-      await axios.post(`${BACKEND_URL}/api/users/register`, form);
-      window.location = "/";
+      const { data } = await axios.post(`${BACKEND_URL}/api/users/register`, form);
+      login(data.user, data.token);
+      navigate("/dashboard");
     }catch(error){
       setErr(error.response?.data?.message || error.message);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -111,7 +120,9 @@ export default function Register(){
             </select>
           </div>
 
-          <button className="btn btn-primary btn-block" style={{marginTop:'1rem'}}>Join Now</button>
+          <button className="btn btn-primary btn-block" style={{marginTop:'1rem'}} disabled={loading}>
+            {loading ? "Creating Account..." : "Join Now"}
+          </button>
         </form>
         
         <p style={{textAlign:'center', marginTop: '1.5rem', color: 'var(--text-muted)'}}>

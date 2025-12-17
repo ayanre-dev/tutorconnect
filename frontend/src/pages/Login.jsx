@@ -8,18 +8,29 @@ export default function Login(){
   const [email,setEmail] = useState("");
   const [password,setPassword] = useState("");
   const [err,setErr] = useState("");
-  const { login } = useAuth();
+  const [loading,setLoading] = useState(false);
+  const { user, login } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   async function submit(e){
     e.preventDefault();
     setErr("");
+    setLoading(true);
     try{
       const { data } = await axios.post(`${BACKEND_URL}/api/users/login`, { email, password });
-      login(data.user, data.token); // Use context action
+      login(data.user, data.token);
       navigate("/dashboard");
     }catch(err){
       setErr(err.response?.data?.message || err.message);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -49,7 +60,9 @@ export default function Login(){
                 style={{width:'100%'}}
             />
           </div>
-          <button className="btn btn-primary btn-block" style={{marginTop:'1rem'}}>Sign In</button>
+          <button className="btn btn-primary btn-block" style={{marginTop:'1rem'}} disabled={loading}>
+            {loading ? "Signing in..." : "Sign In"}
+          </button>
         </form>
         
         <p style={{textAlign:'center', marginTop:'1.5rem', color:'var(--text-muted)'}}>
