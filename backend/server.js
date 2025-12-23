@@ -7,7 +7,9 @@ import connectDB from "./db.js";
 
 import userRoutes from "./routes/userRoutes.js";
 import classRoutes from "./routes/classRoutes.js";
+
 import sessionRoutes from "./routes/sessionRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -24,15 +26,15 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-    
+
     // Allow all origins for development (you can restrict this later)
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
       return callback(null, true);
     }
-    
+
     // For now, allow all origins to debug
     return callback(null, true);
   },
@@ -46,7 +48,9 @@ app.use(cors({
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/classes", classRoutes);
+
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
@@ -55,7 +59,7 @@ app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", 
+    origin: "*",
     methods: ["GET", "POST"],
     allowedHeaders: ["ngrok-skip-browser-warning"],
     credentials: true
@@ -69,7 +73,7 @@ io.on("connection", (socket) => {
   socket.on("join-room", (room) => {
     console.log(`👤 User ${socket.id} joining room: ${room}`);
     socket.join(room);
-    
+
     // Get all users currently in the room using Socket.io adapter
     const roomSet = io.sockets.adapter.rooms.get(room);
     const usersInRoom = [];

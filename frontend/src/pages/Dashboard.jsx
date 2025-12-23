@@ -2,6 +2,7 @@
 import React from "react";
 import StudentDashboard from "./StudentDashboard";
 import TutorDashboard from "./TutorDashboard";
+import AdminDashboard from "./AdminDashboard";
 
 const Dashboard = () => {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -10,7 +11,13 @@ const Dashboard = () => {
 
   return (
     <>
-      {user.role === "tutor" ? <TutorDashboard /> : <StudentDashboard />}
+      {user.role === "admin" ? (
+        <AdminDashboard />
+      ) : user.role === "tutor" ? (
+        <TutorDashboard />
+      ) : (
+        <StudentDashboard />
+      )}
     </>
   );
 };
