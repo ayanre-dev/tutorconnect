@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import VideoRoom from "./pages/VideoRoom";
 import LandingPage from "./pages/LandingPage";
 import Marketplace from "./pages/Marketplace";
@@ -33,6 +34,11 @@ function App() {
             <Route path="/marketplace" element={
               <ProtectedRoute>
                 <Marketplace />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin-dashboard" element={
+              <ProtectedRoute>
+                <AdminDashboard />
               </ProtectedRoute>
             } />
             <Route path="/room/:roomId" element={

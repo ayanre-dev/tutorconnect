@@ -4,30 +4,32 @@ import { useAuth } from "../context/AuthContext";
 import { BACKEND_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 
-export default function Login(){
-  const [email,setEmail] = useState("");
-  const [password,setPassword] = useState("");
-  const [err,setErr] = useState("");
-  const [loading,setLoading] = useState(false);
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
   const { user, login } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already logged in
   React.useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      if (user.role === "admin") navigate("/admin-dashboard");
+      else navigate("/dashboard");
     }
   }, [user, navigate]);
 
-  async function submit(e){
+  async function submit(e) {
     e.preventDefault();
     setErr("");
     setLoading(true);
-    try{
+    try {
       const { data } = await axios.post(`${BACKEND_URL}/api/users/login`, { email, password });
       login(data.user, data.token);
-      navigate("/dashboard");
-    }catch(err){
+      if (data.user.role === "admin") navigate("/admin-dashboard");
+      else navigate("/dashboard");
+    } catch (err) {
       setErr(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
@@ -37,35 +39,35 @@ export default function Login(){
   return (
     <div className="center-screen">
       <div className="card">
-        <h2 style={{textAlign:'center', marginBottom:'2rem'}}>Welcome Back</h2>
-        {err && <div style={{color:"var(--danger)", padding:'10px', background:'rgba(249,38,114,0.1)', textAlign:'center', borderRadius:'4px', marginBottom:'1rem'}}>{err}</div>}
-        
+        <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>Welcome Back</h2>
+        {err && <div style={{ color: "var(--danger)", padding: '10px', background: 'rgba(249,38,114,0.1)', textAlign: 'center', borderRadius: '4px', marginBottom: '1rem' }}>{err}</div>}
+
         <form onSubmit={submit}>
           <div className="form-group">
             <label>Email</label>
-            <input 
-                placeholder="Enter your email" 
-                value={email} 
-                onChange={e=>setEmail(e.target.value)} 
-                style={{width:'100%'}}
+            <input
+              placeholder="Enter your email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              style={{ width: '100%' }}
             />
           </div>
           <div className="form-group">
             <label>Password</label>
-            <input 
-                type="password" 
-                placeholder="Enter your password" 
-                value={password} 
-                onChange={e=>setPassword(e.target.value)} 
-                style={{width:'100%'}}
+            <input
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              style={{ width: '100%' }}
             />
           </div>
-          <button className="btn btn-primary btn-block" style={{marginTop:'1rem'}} disabled={loading}>
+          <button className="btn btn-primary btn-block" style={{ marginTop: '1rem' }} disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
-        
-        <p style={{textAlign:'center', marginTop:'1.5rem', color:'var(--text-muted)'}}>
+
+        <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-muted)' }}>
           New here? <a href="/register">Create an account</a>
         </p>
       </div>

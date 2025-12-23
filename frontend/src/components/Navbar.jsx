@@ -21,8 +21,10 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              {/* Both Student and Tutor see the same options as requested */}
-              <Link to="/dashboard" className="nav-link">Dashboard</Link>
+              {/* Dynamic Dashboard link based on role */}
+              <Link to={user.role === "admin" ? "/admin-dashboard" : "/dashboard"} className="nav-link">
+                Dashboard
+              </Link>
               <Link to="/marketplace" className="nav-link">Marketplace</Link>
               <button onClick={logout} className="btn-logout">Logout</button>
             </>
